@@ -321,9 +321,9 @@ public:
      *  GattCharacteristic c = GattCharacteristic( 0x2A19, 2, 2, BLE_GATT_CHAR_PROPERTIES_WRITE );
      *
      *  @endcode
-    */
+     */
     /**************************************************************************/
-    GattCharacteristic(const UUID &uuid, uint8_t *value, uint16_t initialLen = 1, uint16_t maxLen = 1,
+    GattCharacteristic(const UUID &uuid, uint8_t *value = NULL, uint16_t initialLen = 0, uint16_t maxLen = 0,
                        uint8_t props = BLE_GATT_CHAR_PROPERTIES_NONE) :
         _uuid(uuid), _value(value), _initialLen(initialLen), _lenMax(maxLen), _handle(), _properties(props) {
         /* empty */
