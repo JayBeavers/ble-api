@@ -17,6 +17,7 @@
 #ifndef __GATT_SERVER_H__
 #define __GATT_SERVER_H__
 
+#include "blecommon.h"
 #include "GattService.h"
 #include "GattServerEvents.h"
 #include "GattCharacteristicWriteCBParams.h"
@@ -66,12 +67,6 @@ public:
         onConfirmationReceived = callback;
     }
 
-protected:
-    GattServer() : serviceCount(0), characteristicCount(0), onDataSent(NULL), onDataWritten(), onUpdatesEnabled(NULL), onUpdatesDisabled(NULL), onConfirmationReceived(NULL) {
-        /* empty */
-    }
-
-protected:
     void handleDataWrittenEvent(const GattCharacteristicWriteCBParams *params) {
         if (onDataWritten.hasCallbacksAttached()) {
             onDataWritten.call(params);
@@ -105,8 +100,14 @@ protected:
     }
 
 protected:
+    GattServer() : serviceCount(0), characteristicCount(0), onDataSent(NULL), onDataWritten(), onUpdatesEnabled(NULL), onUpdatesDisabled(NULL), onConfirmationReceived(NULL) {
+        /* empty */
+    }
+
+protected:
     uint8_t serviceCount;
     uint8_t characteristicCount;
+    uint8_t descriptorCount;
 
 private:
     ServerEventCallbackWithCount_t onDataSent;
