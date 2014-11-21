@@ -17,6 +17,7 @@
 #ifndef __GATT_SERVER_H__
 #define __GATT_SERVER_H__
 
+#include "blecommon.h"
 #include "GattService.h"
 #include "GattServerEvents.h"
 #include "GattCharacteristicWriteCBParams.h"
@@ -36,7 +37,6 @@ public:
     virtual ble_error_t addService(GattService &) = 0;
     virtual ble_error_t readValue(uint16_t handle, uint8_t buffer[], uint16_t *const lengthP) = 0;
     virtual ble_error_t updateValue(uint16_t, uint8_t[], uint16_t, bool localOnly = false) = 0;
-    virtual ble_error_t initializeGATTDatabase(void) = 0;
 
     // ToDo: For updateValue, check the CCCD to see if the value we are
     // updating has the notify or indicate bits sent, and if BOTH are set
@@ -67,12 +67,6 @@ public:
         onConfirmationReceived = callback;
     }
 
-protected:
-    GattServer() : serviceCount(0), characteristicCount(0), onDataSent(NULL), onDataWritten(), onUpdatesEnabled(NULL), onUpdatesDisabled(NULL), onConfirmationReceived(NULL) {
-        /* empty */
-    }
-
-protected:
     void handleDataWrittenEvent(const GattCharacteristicWriteCBParams *params) {
         if (onDataWritten.hasCallbacksAttached()) {
             onDataWritten.call(params);
@@ -106,8 +100,14 @@ protected:
     }
 
 protected:
+    GattServer() : serviceCount(0), characteristicCount(0), onDataSent(NULL), onDataWritten(), onUpdatesEnabled(NULL), onUpdatesDisabled(NULL), onConfirmationReceived(NULL) {
+        /* empty */
+    }
+
+protected:
     uint8_t serviceCount;
     uint8_t characteristicCount;
+    uint8_t descriptorCount;
 
 private:
     ServerEventCallbackWithCount_t onDataSent;
