@@ -18,7 +18,6 @@
 #define __GATT_SERVER_EVENTS_H__
 
 #include "blecommon.h"
-#include "mbed.h"
 
 /**************************************************************************/
 /*!
@@ -46,4 +45,4 @@ public:
     } gattEvent_t;
 };
 
-#endif // ifndef __GATT_SERVER_EVENTS_H__
+#endif // ifndef __GATT_SERVER_EVENTS_H__

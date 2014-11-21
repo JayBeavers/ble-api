@@ -18,7 +18,6 @@
 #define __GAP_EVENTS_H__
 
 #include "blecommon.h"
-#include "mbed.h"
 
 /**************************************************************************/
 /*!
@@ -44,4 +43,4 @@ public:
     } gapEvent_t;
 };
 
-#endif // ifndef __GAP_EVENTS_H__
+#endif // ifndef __GAP_EVENTS_H__

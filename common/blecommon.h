@@ -27,6 +27,7 @@ extern "C" {
 #endif
 
 #include <stdint.h>
+#include <stddef.h>
 
 /** @defgroup BLE_UUID_VALUES Assigned Values for BLE UUIDs
  * @{ */
@@ -132,4 +133,4 @@ typedef enum ble_error_e
 }
 #endif
 
-#endif // ifndef __BLE_COMMON_H__
+#endif // ifndef __BLE_COMMON_H__

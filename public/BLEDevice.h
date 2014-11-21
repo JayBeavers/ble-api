@@ -17,7 +17,6 @@
 #ifndef __BLE_DEVICE__
 #define __BLE_DEVICE__
 
-#include "mbed.h"
 #include "blecommon.h"
 #include "Gap.h"
 #include "GattServer.h"
@@ -635,4 +634,4 @@ BLEDevice::startAdvertising(const GapAdvertisingParams &_advParams)
     return transport->getGap().startAdvertising(_advParams);
 }
 
-#endif // ifndef __BLE_DEVICE__
+#endif // ifndef __BLE_DEVICE__
