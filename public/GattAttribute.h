@@ -18,6 +18,8 @@
 #ifndef __GATT_ATTRIBUTE_H__
 #define __GATT_ATTRIBUTE_H__
 
+#include <stddef.h>
+
 #include "blecommon.h"
 #include "UUID.h"
 
@@ -93,4 +95,4 @@ protected:
     Handle_t  _handle;
 };
 
-#endif // ifndef __GATT_ATTRIBUTE_H__
+#endif // ifndef __GATT_ATTRIBUTE_H__
