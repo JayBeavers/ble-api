@@ -27,7 +27,6 @@ extern "C" {
 #endif
 
 #include <stdint.h>
-#include <stddef.h>
 
 /** @defgroup BLE_UUID_VALUES Assigned Values for BLE UUIDs
  * @{ */
