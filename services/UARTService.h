@@ -17,7 +17,6 @@
 #ifndef __BLE_UART_SERVICE_H__
 #define __BLE_UART_SERVICE_H__
 
-#include "mbed.h"
 #include "Stream.h"
 
 #include "UUID.h"
