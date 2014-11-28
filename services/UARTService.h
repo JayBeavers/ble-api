@@ -41,7 +41,7 @@ public:
 
 public:
     UARTService(BLEDevice &_ble) :
-        Stream("bleuart"),
+        Stream("blueart"),
         ble(_ble),
         receiveBuffer(),
         sendBuffer(),
@@ -86,7 +86,7 @@ public:
      * prepared to stitch these messages back.
      */
     void retargetStdout() {
-        freopen("/bleuart", "w", stdout);
+        freopen("/blueart", "w", stdout);
     }
 
     /**
