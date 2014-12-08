@@ -130,13 +130,13 @@ public:
      * Update flags of the URIBeacon dynamically.
      *
      * @param[in] flagsIn
-     *
+     * @verbatim
      *     ### UriBeacon Flags
      *     Bit   | Description
      *     :---- | :----------
      *     0     | Invisible Hint
      *     1..7  | Reserved for future use. Must be zero.
-     *
+     * @endverbatim
      *     The `Invisible Hint` flag is a command for the user-agent that tells
      *     it not to access or display the UriBeacon. This is a guideline only,
      *     and is not a blocking method. User agents may, with user approval,
@@ -175,12 +175,12 @@ public:
     /**
      * The period in milliseconds that a UriBeacon packet is transmitted.
      *
-     * @Note: A value of zero disables UriBeacon transmissions.
+     * @note A value of zero disables UriBeacon transmissions.
      *
      * @param beaconPeriodIn
      *              Beacon advertising period in milliseconds
      */
-    void setBeaconPeriod(uint16_t beaconPeriodIn) {
+    void setBeaconPeriod(uint16_t beaconPeriodIn) { 
         beaconPeriod = beaconPeriodIn;
         configureGAP();
         updateBeaconPeriodCharacteristic();
