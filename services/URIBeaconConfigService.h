@@ -149,7 +149,10 @@ public:
     }
 
     /**
-     * Update the txPowerLevels table.
+     * @breif Update the txPowerLevels table.
+     * 
+     * @param[in] powerLevelsIn
+     *              Array of power levels
      */
     void setTxPowerLevels(const int8_t powerLevelsIn[NUM_POWER_MODES]) {
         memcpy(powerLevels, powerLevelsIn, sizeof(powerLevels));
@@ -158,7 +161,10 @@ public:
     }
 
     /**
-     * Set the effective power mode from one of the values in the powerLevels tables.
+     * @breif Set the effective power mode from one of the values in the powerLevels tables.
+     *
+     * @param[in] mode
+     *              Set the TX Power Mode.
      */
     void setTxPowerMode(TXPowerModes_t mode) {
         txPowerMode = mode;
@@ -170,6 +176,9 @@ public:
      * The period in milliseconds that a UriBeacon packet is transmitted.
      *
      * @Note: A value of zero disables UriBeacon transmissions.
+     *
+     * @param beaconPeriodIn
+     *              Beacon advertising period in milliseconds
      */
     void setBeaconPeriod(uint16_t beaconPeriodIn) {
         beaconPeriod = beaconPeriodIn;
