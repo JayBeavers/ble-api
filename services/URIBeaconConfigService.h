@@ -32,14 +32,24 @@ static const uint8_t txPowerModeCharUUID[]          = URI_BEACON_CONFIG_UUID_INI
 static const uint8_t beaconPeriodCharUUID[]         = URI_BEACON_CONFIG_UUID_INITIALIZER_LIST(0x20, 0x88);
 static const uint8_t resetCharUUID[]                = URI_BEACON_CONFIG_UUID_INITIALIZER_LIST(0x20, 0x89);
 
+/**
+* @class URIBeaconConfigService
+* @breif UriBeacon Configuration Service. Can be used to set URL, adjust power levels, and set flags.
+*/
 class URIBeaconConfigService {
 public:
+    
+    /**
+    * @enum TXPowerModes_t 
+    * @breif Transmission Power Modes for UriBeacon
+    */
     enum TXPowerModes_t {
-        TX_POWER_MODE_LOWEST = 0,
-        TX_POWER_MODE_LOW    = 1,
-        TX_POWER_MODE_MEDIUM = 2,
-        TX_POWER_MODE_HIGH   = 3,
-        NUM_POWER_MODES
+        
+        TX_POWER_MODE_LOWEST = 0, /*!< Lowest TX power mode */
+        TX_POWER_MODE_LOW    = 1, /*!< Low TX power mode */
+        TX_POWER_MODE_MEDIUM = 2, /*!< Medium TX power mode */
+        TX_POWER_MODE_HIGH   = 3, /*!< High TX power mode */
+        NUM_POWER_MODES           /*!< Number of Power Modes defined */
     };
 
     /**
