@@ -21,7 +21,7 @@
 
 /** 
 * @class HealthThermometerService
-* @breif BLE Health Thermometer Service. This service provides the location of the thermometer and the temperature. <br>
+* @breif BLE Health Thermometer Service. This service provides the location of the thermometer and the temperature.  <br>
 * Service:  https://developer.bluetooth.org/gatt/profiles/Pages/ProfileViewer.aspx?u=org.bluetooth.profile.health_thermometer.xml <br>
 * Temperature Measurement: https://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.temperature_measurement.xml <br>
 * Temperature Type: https://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.temperature_type.xml 
