@@ -125,6 +125,7 @@ public:
      * transactions.
      */
 public:
+    
     /**
      * Update flags of the URIBeacon dynamically.
      *
@@ -201,11 +202,15 @@ private:
         ble.setTxPower(powerLevels[txPowerMode]);
     }
 
+    /*
+    *  Encode the URI Prefix to a single byte if possible.
+    */
     size_t encodeURISchemePrefix(const char *&urldata, size_t &sizeofURLData) {
         if (!sizeofURLData) {
             return 0;
         }
-
+        
+        /* These are the URI Prefixes that can be abbreviated.*/
         const char *prefixes[] = {
             "http://www.",
             "https://www.",
@@ -230,8 +235,13 @@ private:
 
         return encodedBytes;
     }
-
+    
+    /*
+    *  Encode the URI Suffix to a single byte if possible.
+    */
     size_t encodeURI(const char *urldata, size_t sizeofURLData) {
+        
+        /* These are the URI suffixes that can be abbreviated. */
         const char *suffixes[] = {
             ".com/",
             ".org/",
@@ -283,6 +293,9 @@ private:
         return encodedBytes;
     }
 
+    /*
+    *  
+    */
     void onDataWritten(const GattCharacteristicWriteCBParams *params) {
         uint16_t handle = params->charHandle;
         if (handle == uriDataChar.getValueHandle()) {
@@ -338,6 +351,9 @@ private:
         ble.setAdvertisingPayload();
     }
 
+    /*
+    *  Reset the default values.
+    */
     void resetDefaults(void) {
         lockedState      = false;
         uriDataLength    = 0;
@@ -350,6 +366,9 @@ private:
         updateGATT();
     }
 
+    /*
+    *  
+    */
     void updateGATT(void) {
         updateLockedStateCharacteristic();
         updateURIDataCharacteristic();
@@ -385,7 +404,7 @@ private:
 
 private:
     /**
-     * For debugging only.
+     * For debugging only. Print Hex representation of ServiceDataPayload to terminal.
      */
     void dumpEncodedSeviceData() const {
         printf("encoded: '");
