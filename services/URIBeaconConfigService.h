@@ -178,7 +178,7 @@ public:
     }
 
 private:
-    /**
+    /*
      * Setup the advertisement payload and GAP settings.
      */
     void configureGAP(void) {
@@ -402,7 +402,11 @@ private:
        ble.updateCharacteristicValue(txPowerLevelsChar.getValueHandle(), reinterpret_cast<uint8_t *>(powerLevels), NUM_POWER_MODES * sizeof(int8_t));
     }
 
+    /**
+    * The following is a private debug function.
+    */
 private:
+
     /**
      * For debugging only. Print Hex representation of ServiceDataPayload to terminal.
      */
