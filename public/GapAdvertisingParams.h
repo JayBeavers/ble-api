@@ -83,4 +83,4 @@ private:
     GapAdvertisingParams(const GapAdvertisingParams &);
 };
 
-#endif // ifndef __GAP_ADVERTISING_PARAMS_H__
+#endif // ifndef __GAP_ADVERTISING_PARAMS_H__

@@ -133,4 +133,4 @@ typedef enum ble_error_e
 }
 #endif
 
-#endif // ifndef __BLE_COMMON_H__
+#endif // ifndef __BLE_COMMON_H__

@@ -79,4 +79,4 @@ private:
     uint16_t             _handle;
 };
 
-#endif // ifndef __GATT_SERVICE_H__
+#endif // ifndef __GATT_SERVICE_H__

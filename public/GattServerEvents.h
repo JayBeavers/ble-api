@@ -36,4 +36,4 @@ public:
     } gattEvent_t;
 };
 
-#endif // ifndef __GATT_SERVER_EVENTS_H__
+#endif // ifndef __GATT_SERVER_EVENTS_H__

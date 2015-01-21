@@ -71,4 +71,4 @@ private:
     GattAttribute& operator=(const GattAttribute &);
 };
 
-#endif // ifndef __GATT_ATTRIBUTE_H__
+#endif // ifndef __GATT_ATTRIBUTE_H__

@@ -431,4 +431,4 @@ private:
     GattCharacteristic& operator=(const GattCharacteristic &);
 };
 
-#endif // ifndef __GATT_CHARACTERISTIC_H__
+#endif // ifndef __GATT_CHARACTERISTIC_H__

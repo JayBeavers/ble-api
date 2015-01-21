@@ -174,4 +174,4 @@ private:
     Gap& operator=(const Gap &);
 };
 
-#endif // ifndef __GAP_H__
+#endif // ifndef __GAP_H__
