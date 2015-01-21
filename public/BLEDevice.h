@@ -666,4 +666,4 @@ BLEDevice::startAdvertising(const GapAdvertisingParams &_advParams)
     return transport->getGap().startAdvertising(_advParams);
 }
 
-#endif // ifndef __BLE_DEVICE__
+#endif // ifndef __BLE_DEVICE__
