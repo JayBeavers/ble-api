@@ -107,4 +107,4 @@ private:
     GattServer& operator=(const GattServer &);
 };
 
-#endif // ifndef __GATT_SERVER_H__
+#endif // ifndef __GATT_SERVER_H__
