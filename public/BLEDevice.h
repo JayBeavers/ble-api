@@ -71,7 +71,9 @@ public:
      *              Any central device can connect to this peripheral.
      *
      *              \par ADV_SCANNABLE_UNDIRECTED
-     *              Include support for Scan Response payloads.
+     *              Any central device can connect to this peripheral, and
+     *              the secondary Scan Response payload will be included or
+     *              available to central devices.
      *
      *              \par
      *              See Bluetooth Core Specification 4.0 (Vol. 3), Part C,
