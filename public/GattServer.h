@@ -34,7 +34,6 @@ protected:
         characteristicCount(0),
         onDataSent(),
         onDataWritten(),
-        onDataRead(),
         onUpdatesEnabled(NULL),
         onUpdatesDisabled(NULL),
         onConfirmationReceived(NULL) {
@@ -44,10 +43,10 @@ protected:
     friend class BLEDevice;
 private:
     /* These functions must be defined in the sub-class */
-    virtual ble_error_t addService(GattService &)                                             = 0;
-    virtual ble_error_t readValue(uint16_t handle, uint8_t buffer[], uint16_t *const lengthP) = 0;
-    virtual ble_error_t updateValue(uint16_t, uint8_t[], uint16_t, bool localOnly = false)    = 0;
-    virtual ble_error_t initializeGATTDatabase(void)                                          = 0;
+    virtual ble_error_t addService(GattService &)                                                            = 0;
+    virtual ble_error_t readValue(GattAttribute::Handle_t handle, uint8_t buffer[], uint16_t *const lengthP) = 0;
+    virtual ble_error_t updateValue(GattAttribute::Handle_t, uint8_t[], uint16_t, bool localOnly = false)    = 0;
+    virtual ble_error_t initializeGATTDatabase(void)                                                         = 0;
 
     // ToDo: For updateValue, check the CCCD to see if the value we are
     // updating has the notify or indicate bits sent, and if BOTH are set
@@ -64,15 +63,6 @@ private:
     void setOnDataWritten(T *objPtr, void (T::*memberPtr)(const GattCharacteristicWriteCBParams *context)) {
         onDataWritten.add(objPtr, memberPtr);
     }
-    ble_error_t setOnDataRead(void (*callback)(const GattCharacteristicReadCBParams *eventDataP)) {
-        onDataRead.add(callback);
-        return BLE_ERROR_NONE;
-    }
-    template <typename T>
-    ble_error_t setOnDataRead(T *objPtr, void (T::*memberPtr)(const GattCharacteristicReadCBParams *context)) {
-        onDataRead.add(objPtr, memberPtr);
-        return BLE_ERROR_NONE;
-    }
     void setOnUpdatesEnabled(EventCallback_t callback) {onUpdatesEnabled = callback;}
     void setOnUpdatesDisabled(EventCallback_t callback) {onUpdatesDisabled = callback;}
     void setOnConfirmationReceived(EventCallback_t callback) {onConfirmationReceived = callback;}
@@ -81,12 +71,6 @@ protected:
     void handleDataWrittenEvent(const GattCharacteristicWriteCBParams *params) {
         if (onDataWritten.hasCallbacksAttached()) {
             onDataWritten.call(params);
-        }
-    }
-
-    void handleDataReadEvent(const GattCharacteristicReadCBParams *params) {
-        if (onDataRead.hasCallbacksAttached()) {
-            onDataRead.call(params);
         }
     }
 
@@ -125,7 +109,6 @@ protected:
 private:
     CallChainOfFunctionPointersWithContext<unsigned> onDataSent;
     CallChainOfFunctionPointersWithContext<const GattCharacteristicWriteCBParams *> onDataWritten;
-    CallChainOfFunctionPointersWithContext<const GattCharacteristicReadCBParams *> onDataRead;
     EventCallback_t onUpdatesEnabled;
     EventCallback_t onUpdatesDisabled;
     EventCallback_t onConfirmationReceived;
