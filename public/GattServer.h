@@ -21,7 +21,7 @@
 #include "GattService.h"
 #include "GattAttribute.h"
 #include "GattServerEvents.h"
-#include "GattCallbackParamTypes.h"
+#include "GattCharacteristicCallbackParams.h"
 #include "CallChainOfFunctionPointersWithContext.h"
 
 class GattServer {
@@ -63,9 +63,9 @@ private:
     void setOnDataSent(T *objPtr, void (T::*memberPtr)(unsigned count)) {
         onDataSent.add(objPtr, memberPtr);
     }
-    void setOnDataWritten(void (*callback)(const GattWriteCallbackParams *eventDataP)) {onDataWritten.add(callback);}
+    void setOnDataWritten(void (*callback)(const GattCharacteristicWriteCBParams *eventDataP)) {onDataWritten.add(callback);}
     template <typename T>
-    void setOnDataWritten(T *objPtr, void (T::*memberPtr)(const GattWriteCallbackParams *context)) {
+    void setOnDataWritten(T *objPtr, void (T::*memberPtr)(const GattCharacteristicWriteCBParams *context)) {
         onDataWritten.add(objPtr, memberPtr);
     }
 
@@ -76,7 +76,7 @@ private:
     virtual bool isOnDataReadAvailable() const {
         return false;
     }
-    ble_error_t setOnDataRead(void (*callback)(const GattReadCallbackParams *eventDataP)) {
+    ble_error_t setOnDataRead(void (*callback)(const GattCharacteristicReadCBParams *eventDataP)) {
         if (!isOnDataReadAvailable()) {
             return BLE_ERROR_NOT_IMPLEMENTED;
         }
@@ -85,7 +85,7 @@ private:
         return BLE_ERROR_NONE;
     }
     template <typename T>
-    ble_error_t setOnDataRead(T *objPtr, void (T::*memberPtr)(const GattReadCallbackParams *context)) {
+    ble_error_t setOnDataRead(T *objPtr, void (T::*memberPtr)(const GattCharacteristicReadCBParams *context)) {
         if (!isOnDataReadAvailable()) {
             return BLE_ERROR_NOT_IMPLEMENTED;
         }
@@ -98,13 +98,13 @@ private:
     void setOnConfirmationReceived(EventCallback_t callback) {onConfirmationReceived = callback;}
 
 protected:
-    void handleDataWrittenEvent(const GattWriteCallbackParams *params) {
+    void handleDataWrittenEvent(const GattCharacteristicWriteCBParams *params) {
         if (onDataWritten.hasCallbacksAttached()) {
             onDataWritten.call(params);
         }
     }
 
-    void handleDataReadEvent(const GattReadCallbackParams *params) {
+    void handleDataReadEvent(const GattCharacteristicReadCBParams *params) {
         if (onDataRead.hasCallbacksAttached()) {
             onDataRead.call(params);
         }
@@ -144,8 +144,8 @@ protected:
 
 private:
     CallChainOfFunctionPointersWithContext<unsigned>                                onDataSent;
-    CallChainOfFunctionPointersWithContext<const GattWriteCallbackParams *> onDataWritten;
-    CallChainOfFunctionPointersWithContext<const GattReadCallbackParams *>  onDataRead;
+    CallChainOfFunctionPointersWithContext<const GattCharacteristicWriteCBParams *> onDataWritten;
+    CallChainOfFunctionPointersWithContext<const GattCharacteristicReadCBParams *>  onDataRead;
     EventCallback_t                                                                 onUpdatesEnabled;
     EventCallback_t                                                                 onUpdatesDisabled;
     EventCallback_t                                                                 onConfirmationReceived;
