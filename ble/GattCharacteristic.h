@@ -18,8 +18,9 @@
 #define __GATT_CHARACTERISTIC_H__
 
 #include "Gap.h"
+#include "SecurityManager.h"
 #include "GattAttribute.h"
-#include "GattCharacteristicCallbackParams.h"
+#include "GattCallbackParamTypes.h"
 #include "FunctionPointerWithContext.h"
 
 class GattCharacteristic {
@@ -331,7 +332,7 @@ public:
                        unsigned       numDescriptors = 0) :
         _valueAttribute(uuid, valuePtr, initialLen, maxLen),
         _properties(props),
-        _requiredSecurity(Gap::SECURITY_MODE_ENCRYPTION_OPEN_LINK),
+        _requiredSecurity(SecurityManager::SECURITY_MODE_ENCRYPTION_OPEN_LINK),
         _descriptors(descriptors),
         _descriptorCount(numDescriptors),
         enabledReadAuthorization(false),
@@ -347,7 +348,7 @@ public:
      *
      * @param securityMode Can be one of encryption or signing, with or without protection for MITM (man in the middle attacks).
      */
-    void requireSecurity(Gap::SecurityMode_t securityMode) {
+    void requireSecurity(SecurityManager::SecurityMode_t securityMode) {
         _requiredSecurity = securityMode;
     }
 
@@ -355,21 +356,21 @@ public:
     /**
      * Authorization.
      */
-    void setWriteAuthorizationCallback(void (*callback)(GattCharacteristicWriteAuthCBParams *)) {
+    void setWriteAuthorizationCallback(void (*callback)(GattWriteAuthCallbackParams *)) {
         writeAuthorizationCallback.attach(callback);
         enabledWriteAuthorization = true;
     }
     template <typename T>
-    void setWriteAuthorizationCallback(T *object, void (T::*member)(GattCharacteristicWriteAuthCBParams *)) {
+    void setWriteAuthorizationCallback(T *object, void (T::*member)(GattWriteAuthCallbackParams *)) {
         writeAuthorizationCallback.attach(object, member);
         enabledWriteAuthorization = true;
     }
-    void setReadAuthorizationCallback(void (*callback)(GattCharacteristicReadAuthCBParams *)) {
+    void setReadAuthorizationCallback(void (*callback)(GattReadAuthCallbackParams *)) {
         readAuthorizationCallback.attach(callback);
         enabledReadAuthorization = true;
     }
     template <typename T>
-    void setReadAuthorizationCallback(T *object, void (T::*member)(GattCharacteristicReadAuthCBParams *)) {
+    void setReadAuthorizationCallback(T *object, void (T::*member)(GattReadAuthCallbackParams *)) {
         readAuthorizationCallback.attach(object, member);
         enabledReadAuthorization = true;
     }
@@ -380,7 +381,7 @@ public:
      * @param  params to capture the context of the write-auth request; and also contains an out-parameter for reply.
      * @return        true if the write is authorized to proceed.
      */
-    GattCharacteristicAuthCBReply_t authorizeWrite(GattCharacteristicWriteAuthCBParams *params) {
+    GattAuthCallbackReply_t authorizeWrite(GattWriteAuthCallbackParams *params) {
         if (!isWriteAuthorizationEnabled()) {
             return AUTH_CALLBACK_REPLY_SUCCESS;
         }
@@ -406,7 +407,7 @@ public:
      *
      * @return        true if the read is authorized to proceed.
      */
-    GattCharacteristicAuthCBReply_t authorizeRead(GattCharacteristicReadAuthCBParams *params) {
+    GattAuthCallbackReply_t authorizeRead(GattReadAuthCallbackParams *params) {
         if (!isReadAuthorizationEnabled()) {
             return AUTH_CALLBACK_REPLY_SUCCESS;
         }
@@ -422,7 +423,7 @@ public:
     const GattAttribute&    getValueAttribute()           const {return _valueAttribute;                }
     GattAttribute::Handle_t getValueHandle(void)          const {return getValueAttribute().getHandle();}
     uint8_t                 getProperties(void)           const {return _properties;                    }
-    Gap::SecurityMode_t     getRequiredSecurity()         const {return _requiredSecurity;              }
+    SecurityManager::SecurityMode_t getRequiredSecurity() const {return _requiredSecurity;              }
     uint8_t                 getDescriptorCount(void)      const {return _descriptorCount;               }
     bool                    isReadAuthorizationEnabled()  const {return enabledReadAuthorization;       }
     bool                    isWriteAuthorizationEnabled() const {return enabledWriteAuthorization;      }
@@ -436,16 +437,16 @@ public:
     }
 
 private:
-    GattAttribute         _valueAttribute;
-    uint8_t               _properties;
-    Gap::SecurityMode_t   _requiredSecurity;
-    GattAttribute       **_descriptors;
-    uint8_t               _descriptorCount;
+    GattAttribute                     _valueAttribute;
+    uint8_t                           _properties;
+    SecurityManager::SecurityMode_t   _requiredSecurity;
+    GattAttribute                   **_descriptors;
+    uint8_t                           _descriptorCount;
 
     bool enabledReadAuthorization;
     bool enabledWriteAuthorization;
-    FunctionPointerWithContext<GattCharacteristicReadAuthCBParams *>  readAuthorizationCallback;
-    FunctionPointerWithContext<GattCharacteristicWriteAuthCBParams *> writeAuthorizationCallback;
+    FunctionPointerWithContext<GattReadAuthCallbackParams *>  readAuthorizationCallback;
+    FunctionPointerWithContext<GattWriteAuthCallbackParams *> writeAuthorizationCallback;
 
 private:
     /* disallow copy and assignment */

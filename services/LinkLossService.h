@@ -37,9 +37,9 @@ public:
 
     /**
      * @param[ref] ble
-     *               BLE object for the underlying controller.
+     *                 BLEDevice object for the underlying controller.
      */
-    LinkLossService(BLE &bleIn, callback_t callbackIn, AlertLevel_t levelIn = NO_ALERT) :
+    LinkLossService(BLEDevice &bleIn, callback_t callbackIn, AlertLevel_t levelIn = NO_ALERT) :
         ble(bleIn),
         alertLevel(levelIn),
         callback(callbackIn),
@@ -80,7 +80,7 @@ private:
      * @param[in] params
      *     Information about the characterisitc being updated.
      */
-    virtual void onDataWritten(const GattWriteCallbackParams *params) {
+    virtual void onDataWritten(const GattCharacteristicWriteCBParams *params) {
         if (params->charHandle == alertLevelChar.getValueHandle()) {
             alertLevel = *reinterpret_cast<const AlertLevel_t *>(params->data);
         }
@@ -92,8 +92,8 @@ private:
         }
     }
 
-protected:
-    BLE          &ble;
+private:
+    BLEDevice    &ble;
     AlertLevel_t  alertLevel;
     callback_t    callback;
 

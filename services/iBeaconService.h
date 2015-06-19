@@ -17,7 +17,7 @@
 #define __BLE_IBEACON_SERVICE_H__
 
 #include "core_cmInstr.h"
-#include "BLE.h"
+#include "BLEDevice.h"
 
 /**
 * @class iBeaconService
@@ -49,7 +49,7 @@ public:
     };
 
 public:
-    iBeaconService(BLE            &_ble,
+    iBeaconService(BLEDevice      &_ble,
                    LocationUUID_t  uuid,
                    uint16_t        majNum,
                    uint16_t        minNum,
@@ -67,8 +67,8 @@ public:
     }
 
 private:
-    BLE     &ble;
-    Payload  data;
+    BLEDevice &ble;
+    Payload   data;
 };
 
-#endif //__BLE_IBEACON_SERVICE_H__
+#endif //__BLE_IBEACON_SERVICE_H__
