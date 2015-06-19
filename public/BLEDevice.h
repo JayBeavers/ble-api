@@ -20,19 +20,14 @@
 #include "blecommon.h"
 #include "Gap.h"
 #include "GattServer.h"
-#include "GattClient.h"
-#include "BLEDeviceInstanceBase.h"
-
-#include "GapAdvertisingData.h"
-#include "GapAdvertisingParams.h"
 #include "GapScanningParams.h"
-
+#include "BLEDeviceInstanceBase.h"
 
 /**
  * The base class used to abstract away BLE capable radio transceivers or SOCs,
  * to enable this BLE API to work with any radio transparently.
  */
-class BLEDevice
+class BLE
 {
 public:
     /**
@@ -44,7 +39,7 @@ public:
      * setup (such as clocks or power-modes) which happens early on during
      * system startup. It may not be safe to call init() from global static
      * context where ordering is compiler specific and can't be guaranteed--it
-     * is safe to call BLEDevice::init() from within main().
+     * is safe to call BLE::init() from within main().
      */
     ble_error_t init();
 
@@ -321,25 +316,6 @@ public:
     ble_error_t stopScan(void);
 
     /**
-     * Create a connection (GAP Link Establishment).
-     * @param peerAddr
-     *          48-bit address, LSB format.
-     * @param peerAddrType
-     *          Address type of the peer.
-     * @param connectionParams
-     *         Connection parameters.
-     * @param scanParams
-     *          Paramters to be used while scanning for the peer.
-     * @return  BLE_ERROR_NONE if connection establishment procedure is started
-     *     successfully. The onConnection callback (if set) will be invoked upon
-     *     a connection event.
-     */
-    ble_error_t connect(const Gap::Address_t           peerAddr,
-                        Gap::AddressType_t             peerAddrType = Gap::ADDR_TYPE_RANDOM_STATIC,
-                        const Gap::ConnectionParams_t *connectionParams = NULL,
-                        const GapScanningParams       *scanParams = NULL);
-
-    /**
      * This call initiates the disconnection procedure, and its completion will
      * be communicated to the application with an invocation of the
      * onDisconnection callback.
@@ -392,8 +368,8 @@ public:
      * @Note: it is also possible to setup a callback into a member function of
      * some object.
      */
-    void onDataWritten(void (*callback)(const GattWriteCallbackParams *eventDataP));
-    template <typename T> void onDataWritten(T * objPtr, void (T::*memberPtr)(const GattWriteCallbackParams *context));
+    void onDataWritten(void (*callback)(const GattCharacteristicWriteCBParams *eventDataP));
+    template <typename T> void onDataWritten(T * objPtr, void (T::*memberPtr)(const GattCharacteristicWriteCBParams *context));
 
     /**
      * Setup a callback for when a characteristic is being read by a client.
@@ -413,8 +389,8 @@ public:
      * @return BLE_ERROR_NOT_IMPLEMENTED if this functionality isn't available;
      *         else BLE_ERROR_NONE.
      */
-    ble_error_t onDataRead(void (*callback)(const GattReadCallbackParams *eventDataP));
-    template <typename T> ble_error_t onDataRead(T * objPtr, void (T::*memberPtr)(const GattReadCallbackParams *context));
+    ble_error_t onDataRead(void (*callback)(const GattCharacteristicReadCBParams *eventDataP));
+    template <typename T> ble_error_t onDataRead(T * objPtr, void (T::*memberPtr)(const GattCharacteristicReadCBParams *context));
 
     void onUpdatesEnabled(GattServer::EventCallback_t callback);
     void onUpdatesDisabled(GattServer::EventCallback_t callback);
@@ -469,11 +445,7 @@ public:
     /**
      * A version of the same as above with connection handle parameter to allow updates for connection-specific multivalued attribtues (such as the CCCDs).
      */
-    ble_error_t updateCharacteristicValue(Gap::Handle_t            connectionHandle,
-                                          GattAttribute::Handle_t  attributeHandle,
-                                          const uint8_t           *value,
-                                          uint16_t                 size,
-                                          bool                     localOnly = false);
+    ble_error_t updateCharacteristicValue(Gap::Handle_t connectionHandle, GattAttribute::Handle_t attributeHandle, const uint8_t *value, uint16_t size, bool localOnly = false);
 
     /**
      * Yield control to the BLE stack or to other tasks waiting for events. This
@@ -639,80 +611,8 @@ public:
      */
     ble_error_t purgeAllBondingState(void);
 
-    /**
-     * Launch service discovery. Once launched, service discovery will remain
-     * active with callbacks being issued back into the application for matching
-     * services/characteristics. isServiceDiscoveryActive() can be used to
-     * determine status; and a termination callback (if setup) will be invoked
-     * at the end. Service discovery can be terminated prematurely if needed
-     * using terminateServiceDiscovery().
-     *
-     * @param  connectionHandle
-     *           Handle for the connection with the peer.
-     * @param  sc
-     *           This is the application callback for matching service. Taken as
-     *           NULL by default. Note: service discovery may still be active
-     *           when this callback is issued; calling asynchronous BLE-stack
-     *           APIs from within this application callback might cause the
-     *           stack to abort service discovery. If this becomes an issue, it
-     *           may be better to make local copy of the discoveredService and
-     *           wait for service discovery to terminate before operating on the
-     *           service.
-     * @param  cc
-     *           This is the application callback for matching characteristic.
-     *           Taken as NULL by default. Note: service discovery may still be
-     *           active when this callback is issued; calling asynchronous
-     *           BLE-stack APIs from within this application callback might cause
-     *           the stack to abort service discovery. If this becomes an issue,
-     *           it may be better to make local copy of the discoveredCharacteristic
-     *           and wait for service discovery to terminate before operating on the
-     *           characteristic.
-     * @param  matchingServiceUUID
-     *           UUID based filter for specifying a service in which the application is
-     *           interested. By default it is set as the wildcard UUID_UNKNOWN,
-     *           in which case it matches all services. If characteristic-UUID
-     *           filter (below) is set to the wildcard value, then a service
-     *           callback will be invoked for the matching service (or for every
-     *           service if the service filter is a wildcard).
-     * @param  matchingCharacteristicUUIDIn
-     *           UUID based filter for specifying characteristic in which the application
-     *           is interested. By default it is set as the wildcard UUID_UKNOWN
-     *           to match against any characteristic. If both service-UUID
-     *           filter and characteristic-UUID filter are used with non- wildcard
-     *           values, then only a single characteristic callback is
-     *           invoked for the matching characteristic.
-     *
-     * @Note     Using wildcard values for both service-UUID and characteristic-
-     *           UUID will result in complete service discovery--callbacks being
-     *           called for every service and characteristic.
-     *
-     * @return
-     *           BLE_ERROR_NONE if service discovery is launched successfully; else an appropriate error.
-     */
-    ble_error_t launchServiceDiscovery(Gap::Handle_t                               connectionHandle,
-                                       ServiceDiscovery::ServiceCallback_t         sc = NULL,
-                                       ServiceDiscovery::CharacteristicCallback_t  cc = NULL,
-                                       const UUID                                 &matchingServiceUUID = UUID::ShortUUIDBytes_t(BLE_UUID_UNKNOWN),
-                                       const UUID                                 &matchingCharacteristicUUIDIn = UUID::ShortUUIDBytes_t(BLE_UUID_UNKNOWN));
-
-    /**
-     * Setup callback for when serviceDiscovery terminates.
-     */
-    void onServiceDiscoveryTermination(ServiceDiscovery::TerminationCallback_t callback);
-
-    /**
-     * Is service-discovery currently active?
-     */
-    bool isServiceDiscoveryActive(void);
-
-    /**
-     * Terminate an ongoing service-discovery. This should result in an
-     * invocation of the TerminationCallback if service-discovery is active.
-     */
-    void terminateServiceDiscovery(void);
-
 public:
-    BLEDevice() : transport(createBLEDeviceInstance()), advParams(), advPayload(), scanResponse(), needToSetAdvPayload(true), scanningParams() {
+    BLE() : transport(createBLEDeviceInstance()), advParams(), advPayload(), scanResponse(), needToSetAdvPayload(true), scanningParams() {
         advPayload.clear();
         scanResponse.clear();
     }
@@ -732,42 +632,45 @@ private:
     GapScanningParams    scanningParams;
 };
 
+typedef BLE BLEDevice; /* DEPRECATED. This type alias is retained for the sake of compatibilty with older
+                        * code. Will be dropped at some point soon.*/
+
 /* BLEDevice methods. Most of these simply forward the calls to the underlying
  * transport.*/
 
 inline ble_error_t
-BLEDevice::reset(void)
+BLE::reset(void)
 {
     return transport->reset();
 }
 
 inline ble_error_t
-BLEDevice::shutdown(void)
+BLE::shutdown(void)
 {
     clearAdvertisingPayload();
     return transport->shutdown();
 }
 
 inline ble_error_t
-BLEDevice::setAddress(Gap::AddressType_t type, const Gap::Address_t address)
+BLE::setAddress(Gap::AddressType_t type, const Gap::Address_t address)
 {
     return transport->getGap().setAddress(type, address);
 }
 
 inline ble_error_t
-BLEDevice::getAddress(Gap::AddressType_t *typeP, Gap::Address_t address)
+BLE::getAddress(Gap::AddressType_t *typeP, Gap::Address_t address)
 {
     return transport->getGap().getAddress(typeP, address);
 }
 
 inline void
-BLEDevice::setAdvertisingType(GapAdvertisingParams::AdvertisingType advType)
+BLE::setAdvertisingType(GapAdvertisingParams::AdvertisingType advType)
 {
     advParams.setAdvertisingType(advType);
 }
 
 inline void
-BLEDevice::setAdvertisingInterval(uint16_t interval)
+BLE::setAdvertisingInterval(uint16_t interval)
 {
     if (interval == 0) {
         stopAdvertising();
@@ -778,54 +681,54 @@ BLEDevice::setAdvertisingInterval(uint16_t interval)
 }
 
 inline uint16_t
-BLEDevice::getMinAdvertisingInterval(void) const {
+BLE::getMinAdvertisingInterval(void) const {
     return transport->getGap().getMinAdvertisingInterval();
 }
 
 inline uint16_t
-BLEDevice::getMinNonConnectableAdvertisingInterval(void) const {
+BLE::getMinNonConnectableAdvertisingInterval(void) const {
     return transport->getGap().getMinNonConnectableAdvertisingInterval();
 }
 
 inline uint16_t
-BLEDevice::getMaxAdvertisingInterval(void) const {
+BLE::getMaxAdvertisingInterval(void) const {
     return transport->getGap().getMaxAdvertisingInterval();
 }
 
 inline void
-BLEDevice::setAdvertisingTimeout(uint16_t timeout)
+BLE::setAdvertisingTimeout(uint16_t timeout)
 {
     advParams.setTimeout(timeout);
 }
 
 inline void
-BLEDevice::setAdvertisingParams(const GapAdvertisingParams &newAdvParams)
+BLE::setAdvertisingParams(const GapAdvertisingParams &newAdvParams)
 {
     advParams = newAdvParams;
 }
 
 inline const GapAdvertisingParams &
-BLEDevice::getAdvertisingParams(void) const
+BLE::getAdvertisingParams(void) const
 {
     return advParams;
 }
 
 inline void
-BLEDevice::clearAdvertisingPayload(void)
+BLE::clearAdvertisingPayload(void)
 {
     needToSetAdvPayload = true;
     advPayload.clear();
 }
 
 inline ble_error_t
-BLEDevice::accumulateAdvertisingPayload(uint8_t flags)
+BLE::accumulateAdvertisingPayload(uint8_t flags)
 {
     needToSetAdvPayload = true;
     return advPayload.addFlags(flags);
 }
 
 inline ble_error_t
-BLEDevice::accumulateAdvertisingPayload(GapAdvertisingData::Appearance app)
+BLE::accumulateAdvertisingPayload(GapAdvertisingData::Appearance app)
 {
     needToSetAdvPayload = true;
     transport->getGap().setAppearance(app);
@@ -833,14 +736,14 @@ BLEDevice::accumulateAdvertisingPayload(GapAdvertisingData::Appearance app)
 }
 
 inline ble_error_t
-BLEDevice::accumulateAdvertisingPayloadTxPower(int8_t txPower)
+BLE::accumulateAdvertisingPayloadTxPower(int8_t txPower)
 {
     needToSetAdvPayload = true;
     return advPayload.addTxPower(txPower);
 }
 
 inline ble_error_t
-BLEDevice::accumulateAdvertisingPayload(GapAdvertisingData::DataType type, const uint8_t *data, uint8_t len)
+BLE::accumulateAdvertisingPayload(GapAdvertisingData::DataType type, const uint8_t *data, uint8_t len)
 {
     needToSetAdvPayload = true;
     if (type == GapAdvertisingData::COMPLETE_LOCAL_NAME) {
@@ -850,27 +753,27 @@ BLEDevice::accumulateAdvertisingPayload(GapAdvertisingData::DataType type, const
 }
 
 inline ble_error_t
-BLEDevice::accumulateScanResponse(GapAdvertisingData::DataType type, const uint8_t *data, uint8_t len)
+BLE::accumulateScanResponse(GapAdvertisingData::DataType type, const uint8_t *data, uint8_t len)
 {
     needToSetAdvPayload = true;
     return scanResponse.addData(type, data, len);
 }
 
 inline void
-BLEDevice::clearScanResponse(void)
+BLE::clearScanResponse(void)
 {
     needToSetAdvPayload = true;
     scanResponse.clear();
 }
 
 inline ble_error_t
-BLEDevice::setAdvertisingPayload(void) {
+BLE::setAdvertisingPayload(void) {
     needToSetAdvPayload = false;
     return transport->getGap().setAdvertisingData(advPayload, scanResponse);
 }
 
 inline ble_error_t
-BLEDevice::setAdvertisingData(const GapAdvertisingData& newPayload)
+BLE::setAdvertisingData(const GapAdvertisingData& newPayload)
 {
     advPayload = newPayload;
 
@@ -878,12 +781,12 @@ BLEDevice::setAdvertisingData(const GapAdvertisingData& newPayload)
 }
 
 inline const GapAdvertisingData &
-BLEDevice::getAdvertisingData(void) const {
+BLE::getAdvertisingData(void) const {
     return advPayload;
 }
 
 inline ble_error_t
-BLEDevice::startAdvertising(void)
+BLE::startAdvertising(void)
 {
     ble_error_t rc;
     if ((rc = transport->getGattServer().initializeGATTDatabase()) != BLE_ERROR_NONE) {
@@ -899,13 +802,13 @@ BLEDevice::startAdvertising(void)
 }
 
 inline ble_error_t
-BLEDevice::stopAdvertising(void)
+BLE::stopAdvertising(void)
 {
     return transport->getGap().stopAdvertising();
 }
 
 inline ble_error_t
-BLEDevice::setScanParams(uint16_t interval, uint16_t window, uint16_t timeout, bool activeScanning) {
+BLE::setScanParams(uint16_t interval, uint16_t window, uint16_t timeout, bool activeScanning) {
     ble_error_t rc;
     if (((rc = scanningParams.setInterval(interval)) == BLE_ERROR_NONE) &&
         ((rc = scanningParams.setWindow(window))     == BLE_ERROR_NONE) &&
@@ -918,324 +821,275 @@ BLEDevice::setScanParams(uint16_t interval, uint16_t window, uint16_t timeout, b
 }
 
 inline ble_error_t
-BLEDevice::setScanInterval(uint16_t interval) {
+BLE::setScanInterval(uint16_t interval) {
     return scanningParams.setInterval(interval);
 }
 
 inline ble_error_t
-BLEDevice::setScanWindow(uint16_t window) {
+BLE::setScanWindow(uint16_t window) {
     return scanningParams.setWindow(window);
 }
 
 inline ble_error_t
-BLEDevice::setScanTimeout(uint16_t timeout) {
+BLE::setScanTimeout(uint16_t timeout) {
     return scanningParams.setTimeout(timeout);
 }
 
 inline void
-BLEDevice::setActiveScan(bool activeScanning) {
+BLE::setActiveScan(bool activeScanning) {
     return scanningParams.setActiveScanning(activeScanning);
 }
 
 inline ble_error_t
-BLEDevice::startScan(void (*callback)(const Gap::AdvertisementCallbackParams_t *params)) {
+BLE::startScan(void (*callback)(const Gap::AdvertisementCallbackParams_t *params)) {
     return transport->getGap().startScan(scanningParams, callback);
 }
 
 template<typename T>
 inline ble_error_t
-BLEDevice::startScan(T *object, void (T::*memberCallback)(const Gap::AdvertisementCallbackParams_t *params)) {
+BLE::startScan(T *object, void (T::*memberCallback)(const Gap::AdvertisementCallbackParams_t *params)) {
     return transport->getGap().startScan(scanningParams, object, memberCallback);
 }
 
 inline ble_error_t
-BLEDevice::stopScan(void) {
+BLE::stopScan(void) {
     return transport->getGap().stopScan();
 }
 
 inline ble_error_t
-BLEDevice::connect(const Gap::Address_t           peerAddr,
-                   Gap::AddressType_t             peerAddrType,
-                   const Gap::ConnectionParams_t *connectionParams,
-                   const GapScanningParams       *scanParams) {
-    return transport->getGap().connect(peerAddr, peerAddrType, connectionParams, scanParams);
-}
-
-inline ble_error_t
-BLEDevice::disconnect(Gap::DisconnectionReason_t reason)
+BLE::disconnect(Gap::DisconnectionReason_t reason)
 {
     return transport->getGap().disconnect(reason);
 }
 
 inline void
-BLEDevice::onTimeout(Gap::EventCallback_t timeoutCallback)
+BLE::onTimeout(Gap::EventCallback_t timeoutCallback)
 {
     transport->getGap().setOnTimeout(timeoutCallback);
 }
 
 inline void
-BLEDevice::onConnection(Gap::ConnectionEventCallback_t connectionCallback)
+BLE::onConnection(Gap::ConnectionEventCallback_t connectionCallback)
 {
     transport->getGap().setOnConnection(connectionCallback);
 }
 
 inline void
-BLEDevice::onDisconnection(Gap::DisconnectionEventCallback_t disconnectionCallback)
+BLE::onDisconnection(Gap::DisconnectionEventCallback_t disconnectionCallback)
 {
     transport->getGap().setOnDisconnection(disconnectionCallback);
 }
 
 template<typename T>
 inline void
-BLEDevice::addToDisconnectionCallChain(T *tptr, void (T::*mptr)(void)) {
+BLE::addToDisconnectionCallChain(T *tptr, void (T::*mptr)(void)) {
     transport->getGap().addToDisconnectionCallChain(tptr, mptr);
 }
 
 inline void
-BLEDevice::onDataSent(void (*callback)(unsigned count)) {
+BLE::onDataSent(void (*callback)(unsigned count)) {
     transport->getGattServer().setOnDataSent(callback);
 }
 
 template <typename T> inline void
-BLEDevice::onDataSent(T *objPtr, void (T::*memberPtr)(unsigned count)) {
+BLE::onDataSent(T *objPtr, void (T::*memberPtr)(unsigned count)) {
     transport->getGattServer().setOnDataSent(objPtr, memberPtr);
 }
 
 inline void
-BLEDevice::onDataWritten(void (*callback)(const GattWriteCallbackParams *eventDataP)) {
+BLE::onDataWritten(void (*callback)(const GattCharacteristicWriteCBParams *eventDataP)) {
     transport->getGattServer().setOnDataWritten(callback);
 }
 
 template <typename T> inline void
-BLEDevice::onDataWritten(T *objPtr, void (T::*memberPtr)(const GattWriteCallbackParams *context)) {
+BLE::onDataWritten(T *objPtr, void (T::*memberPtr)(const GattCharacteristicWriteCBParams *context)) {
     transport->getGattServer().setOnDataWritten(objPtr, memberPtr);
 }
 
 inline ble_error_t
-BLEDevice::onDataRead(void (*callback)(const GattReadCallbackParams *eventDataP)) {
+BLE::onDataRead(void (*callback)(const GattCharacteristicReadCBParams *eventDataP)) {
     return transport->getGattServer().setOnDataRead(callback);
 }
 
 template <typename T> inline ble_error_t
-BLEDevice::onDataRead(T *objPtr, void (T::*memberPtr)(const GattReadCallbackParams *context)) {
+BLE::onDataRead(T *objPtr, void (T::*memberPtr)(const GattCharacteristicReadCBParams *context)) {
     return transport->getGattServer().setOnDataRead(objPtr, memberPtr);
 }
 
 inline void
-BLEDevice::onUpdatesEnabled(GattServer::EventCallback_t callback)
+BLE::onUpdatesEnabled(GattServer::EventCallback_t callback)
 {
     transport->getGattServer().setOnUpdatesEnabled(callback);
 }
 
 inline void
-BLEDevice::onUpdatesDisabled(GattServer::EventCallback_t callback)
+BLE::onUpdatesDisabled(GattServer::EventCallback_t callback)
 {
     transport->getGattServer().setOnUpdatesDisabled(callback);
 }
 
 inline void
-BLEDevice::onConfirmationReceived(GattServer::EventCallback_t callback)
+BLE::onConfirmationReceived(GattServer::EventCallback_t callback)
 {
     transport->getGattServer().setOnConfirmationReceived(callback);
 }
 
 inline void
-BLEDevice::onRadioNotification(Gap::RadioNotificationEventCallback_t callback)
+BLE::onRadioNotification(Gap::RadioNotificationEventCallback_t callback)
 {
     transport->getGap().setOnRadioNotification(callback);
 }
 
 inline ble_error_t
-BLEDevice::addService(GattService &service)
+BLE::addService(GattService &service)
 {
     return transport->getGattServer().addService(service);
 }
 
 inline Gap::GapState_t
-BLEDevice::getGapState(void) const
+BLE::getGapState(void) const
 {
     return transport->getGap().getState();
 }
 
-inline ble_error_t BLEDevice::readCharacteristicValue(GattAttribute::Handle_t attributeHandle, uint8_t *buffer, uint16_t *lengthP)
+inline ble_error_t
+BLE::readCharacteristicValue(GattAttribute::Handle_t attributeHandle, uint8_t *buffer, uint16_t *lengthP)
 {
     return transport->getGattServer().readValue(attributeHandle, buffer, lengthP);
 }
 
-inline ble_error_t BLEDevice::readCharacteristicValue(Gap::Handle_t            connectionHandle,
-                                                      GattAttribute::Handle_t  attributeHandle,
-                                                      uint8_t                 *buffer,
-                                                      uint16_t                *lengthP)
+inline ble_error_t
+BLE::readCharacteristicValue(Gap::Handle_t connectionHandle, GattAttribute::Handle_t attributeHandle, uint8_t *buffer, uint16_t *lengthP)
 {
     return transport->getGattServer().readValue(connectionHandle, attributeHandle, buffer, lengthP);
 }
 
 inline ble_error_t
-BLEDevice::updateCharacteristicValue(GattAttribute::Handle_t attributeHandle, const uint8_t *value, uint16_t size, bool localOnly)
+BLE::updateCharacteristicValue(GattAttribute::Handle_t attributeHandle, const uint8_t *value, uint16_t size, bool localOnly)
 {
     return transport->getGattServer().updateValue(attributeHandle, const_cast<uint8_t *>(value), size, localOnly);
 }
 
 inline ble_error_t
-BLEDevice::updateCharacteristicValue(Gap::Handle_t            connectionHandle,
-                                     GattAttribute::Handle_t  attributeHandle,
-                                     const uint8_t           *value,
-                                     uint16_t                 size,
-                                     bool                     localOnly)
+BLE::updateCharacteristicValue(Gap::Handle_t connectionHandle, GattAttribute::Handle_t attributeHandle, const uint8_t *value, uint16_t size, bool localOnly)
 {
     return transport->getGattServer().updateValue(connectionHandle, attributeHandle, const_cast<uint8_t *>(value), size, localOnly);
 }
 
 inline void
-BLEDevice::waitForEvent(void)
+BLE::waitForEvent(void)
 {
     transport->waitForEvent();
 }
 
 inline ble_error_t
-BLEDevice::getPreferredConnectionParams(Gap::ConnectionParams_t *params)
+BLE::getPreferredConnectionParams(Gap::ConnectionParams_t *params)
 {
     return transport->getGap().getPreferredConnectionParams(params);
 }
 
 inline ble_error_t
-BLEDevice::setPreferredConnectionParams(const Gap::ConnectionParams_t *params)
+BLE::setPreferredConnectionParams(const Gap::ConnectionParams_t *params)
 {
     return transport->getGap().setPreferredConnectionParams(params);
 }
 
 inline ble_error_t
-BLEDevice::updateConnectionParams(Gap::Handle_t handle, const Gap::ConnectionParams_t *params) {
+BLE::updateConnectionParams(Gap::Handle_t handle, const Gap::ConnectionParams_t *params) {
     return transport->getGap().updateConnectionParams(handle, params);
 }
 
 inline const char *
-BLEDevice::getVersion(void)
+BLE::getVersion(void)
 {
     return transport->getVersion();
 }
 
 inline ble_error_t
-BLEDevice::setDeviceName(const uint8_t *deviceName)
+BLE::setDeviceName(const uint8_t *deviceName)
 {
     return transport->getGap().setDeviceName(deviceName);
 }
 
 inline ble_error_t
-BLEDevice::getDeviceName(uint8_t *deviceName, unsigned *lengthP)
+BLE::getDeviceName(uint8_t *deviceName, unsigned *lengthP)
 {
     return transport->getGap().getDeviceName(deviceName, lengthP);
 }
 
 inline ble_error_t
-BLEDevice::setAppearance(uint16_t appearance)
+BLE::setAppearance(uint16_t appearance)
 {
     return transport->getGap().setAppearance(appearance);
 }
 
 inline ble_error_t
-BLEDevice::getAppearance(uint16_t *appearanceP)
+BLE::getAppearance(uint16_t *appearanceP)
 {
     return transport->getGap().getAppearance(appearanceP);
 }
 
 inline ble_error_t
-BLEDevice::setTxPower(int8_t txPower)
+BLE::setTxPower(int8_t txPower)
 {
-    return transport->setTxPower(txPower);
+    return transport->getGap().setTxPower(txPower);
 }
 
 inline void
-BLEDevice::getPermittedTxPowerValues(const int8_t **valueArrayPP, size_t *countP)
+BLE::getPermittedTxPowerValues(const int8_t **valueArrayPP, size_t *countP)
 {
-    transport->getPermittedTxPowerValues(valueArrayPP, countP);
+    transport->getGap().getPermittedTxPowerValues(valueArrayPP, countP);
 }
 
 inline ble_error_t
-BLEDevice::initializeSecurity(bool                          enableBonding,
-                              bool                          requireMITM,
-                              Gap::SecurityIOCapabilities_t iocaps,
-                              const Gap::Passkey_t          passkey)
+BLE::initializeSecurity(bool                          enableBonding,
+                        bool                          requireMITM,
+                        Gap::SecurityIOCapabilities_t iocaps,
+                        const Gap::Passkey_t          passkey)
 {
     return transport->initializeSecurity(enableBonding, requireMITM, iocaps, passkey);
 }
 
 inline void
-BLEDevice::onSecuritySetupInitiated(Gap::SecuritySetupInitiatedCallback_t callback)
+BLE::onSecuritySetupInitiated(Gap::SecuritySetupInitiatedCallback_t callback)
 {
     transport->getGap().setOnSecuritySetupInitiated(callback);
 }
 
 inline void
-BLEDevice::onSecuritySetupCompleted(Gap::SecuritySetupCompletedCallback_t callback)
+BLE::onSecuritySetupCompleted(Gap::SecuritySetupCompletedCallback_t callback)
 {
     transport->getGap().setOnSecuritySetupCompleted(callback);
 }
 
 inline void
-BLEDevice::onLinkSecured(Gap::LinkSecuredCallback_t callback)
+BLE::onLinkSecured(Gap::LinkSecuredCallback_t callback)
 {
     transport->getGap().setOnLinkSecured(callback);
 }
 
 inline void
-BLEDevice::onSecurityContextStored(Gap::HandleSpecificEvent_t callback)
+BLE::onSecurityContextStored(Gap::HandleSpecificEvent_t callback)
 {
     transport->getGap().setOnSecurityContextStored(callback);
 }
 
 inline void
-BLEDevice::onPasskeyDisplay(Gap::PasskeyDisplayCallback_t callback)
+BLE::onPasskeyDisplay(Gap::PasskeyDisplayCallback_t callback)
 {
     return transport->getGap().setOnPasskeyDisplay(callback);
 }
 
 inline ble_error_t
-BLEDevice::getLinkSecurity(Gap::Handle_t connectionHandle, Gap::LinkSecurityStatus_t *securityStatusP)
+BLE::getLinkSecurity(Gap::Handle_t connectionHandle, Gap::LinkSecurityStatus_t *securityStatusP)
 {
     return transport->getGap().getLinkSecurity(connectionHandle, securityStatusP);
 }
 
 inline ble_error_t
-BLEDevice::purgeAllBondingState(void)
+BLE::purgeAllBondingState(void)
 {
     return transport->getGap().purgeAllBondingState();
 }
-
-inline ble_error_t
-BLEDevice::launchServiceDiscovery(Gap::Handle_t                               connectionHandle,
-                                  ServiceDiscovery::ServiceCallback_t         sc,
-                                  ServiceDiscovery::CharacteristicCallback_t  cc,
-                                  const UUID                                 &matchingServiceUUID,
-                                  const UUID                                 &matchingCharacteristicUUID)
-{
-    return transport->getGattClient().launchServiceDiscovery(connectionHandle, sc, cc, matchingServiceUUID, matchingCharacteristicUUID);
-}
-
-inline void
-BLEDevice::onServiceDiscoveryTermination(ServiceDiscovery::TerminationCallback_t callback)
-{
-    transport->getGattClient().onServiceDiscoveryTermination(callback);
-}
-
-/**
- * Is service-discovery currently active?
- */
-inline bool
-BLEDevice::isServiceDiscoveryActive(void)
-{
-    return transport->getGattClient().isServiceDiscoveryActive();
-}
-
-/**
- * Terminate an ongoing service-discovery. This should result in an
- * invocation of the TerminationCallback if service-discovery is active.
- */
-inline void
-BLEDevice::terminateServiceDiscovery(void)
-{
-    transport->getGattClient().terminateServiceDiscovery();
-}
-
 
 #endif // ifndef __BLE_DEVICE__

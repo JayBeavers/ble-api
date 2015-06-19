@@ -19,7 +19,7 @@
 
 #include "Gap.h"
 #include "GattAttribute.h"
-#include "GattCallbackParamTypes.h"
+#include "GattCharacteristicCallbackParams.h"
 #include "FunctionPointerWithContext.h"
 
 class GattCharacteristic {
@@ -355,21 +355,21 @@ public:
     /**
      * Authorization.
      */
-    void setWriteAuthorizationCallback(void (*callback)(GattWriteAuthCallbackParams *)) {
+    void setWriteAuthorizationCallback(void (*callback)(GattCharacteristicWriteAuthCBParams *)) {
         writeAuthorizationCallback.attach(callback);
         enabledWriteAuthorization = true;
     }
     template <typename T>
-    void setWriteAuthorizationCallback(T *object, void (T::*member)(GattWriteAuthCallbackParams *)) {
+    void setWriteAuthorizationCallback(T *object, void (T::*member)(GattCharacteristicWriteAuthCBParams *)) {
         writeAuthorizationCallback.attach(object, member);
         enabledWriteAuthorization = true;
     }
-    void setReadAuthorizationCallback(void (*callback)(GattReadAuthCallbackParams *)) {
+    void setReadAuthorizationCallback(void (*callback)(GattCharacteristicReadAuthCBParams *)) {
         readAuthorizationCallback.attach(callback);
         enabledReadAuthorization = true;
     }
     template <typename T>
-    void setReadAuthorizationCallback(T *object, void (T::*member)(GattReadAuthCallbackParams *)) {
+    void setReadAuthorizationCallback(T *object, void (T::*member)(GattCharacteristicReadAuthCBParams *)) {
         readAuthorizationCallback.attach(object, member);
         enabledReadAuthorization = true;
     }
@@ -380,7 +380,7 @@ public:
      * @param  params to capture the context of the write-auth request; and also contains an out-parameter for reply.
      * @return        true if the write is authorized to proceed.
      */
-    GattAuthCallbackReply_t authorizeWrite(GattWriteAuthCallbackParams *params) {
+    GattCharacteristicAuthCBReply_t authorizeWrite(GattCharacteristicWriteAuthCBParams *params) {
         if (!isWriteAuthorizationEnabled()) {
             return AUTH_CALLBACK_REPLY_SUCCESS;
         }
@@ -406,7 +406,7 @@ public:
      *
      * @return        true if the read is authorized to proceed.
      */
-    GattAuthCallbackReply_t authorizeRead(GattReadAuthCallbackParams *params) {
+    GattCharacteristicAuthCBReply_t authorizeRead(GattCharacteristicReadAuthCBParams *params) {
         if (!isReadAuthorizationEnabled()) {
             return AUTH_CALLBACK_REPLY_SUCCESS;
         }
@@ -444,8 +444,8 @@ private:
 
     bool enabledReadAuthorization;
     bool enabledWriteAuthorization;
-    FunctionPointerWithContext<GattReadAuthCallbackParams *>  readAuthorizationCallback;
-    FunctionPointerWithContext<GattWriteAuthCallbackParams *> writeAuthorizationCallback;
+    FunctionPointerWithContext<GattCharacteristicReadAuthCBParams *>  readAuthorizationCallback;
+    FunctionPointerWithContext<GattCharacteristicWriteAuthCBParams *> writeAuthorizationCallback;
 
 private:
     /* disallow copy and assignment */
