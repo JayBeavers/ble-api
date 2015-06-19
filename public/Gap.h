@@ -17,15 +17,16 @@
 #ifndef __GAP_H__
 #define __GAP_H__
 
-#include "GapAdvertisingData.h"
-#include "GapAdvertisingParams.h"
 #include "GapEvents.h"
 #include "CallChain.h"
 #include "FunctionPointerWithContext.h"
 
 using namespace mbed;
 
-class GapScanningParams; /* forward declaration */
+/* Forward declarations for classes which will only be used for pointers or references in the following. */
+class GapAdvertisingParams;
+class GapScanningParams;
+class GapAdvertisingData;
 
 class Gap {
 public:
@@ -56,12 +57,9 @@ public:
      * transport library.
      */
     enum DisconnectionReason_t {
-        CONNECTION_TIMEOUT                          = 0x08,
-        REMOTE_USER_TERMINATED_CONNECTION           = 0x13,
-        REMOTE_DEV_TERMINATION_DUE_TO_LOW_RESOURCES = 0x14,  /**< Remote Device Terminated Connection due to low resources.*/
-        REMOTE_DEV_TERMINATION_DUE_TO_POWER_OFF     = 0x15,  /**< Remote Device Terminated Connection due to power off. */
-        LOCAL_HOST_TERMINATED_CONNECTION            = 0x16,
-        CONN_INTERVAL_UNACCEPTABLE                  = 0x3B,
+        REMOTE_USER_TERMINATED_CONNECTION = 0x13,
+        LOCAL_HOST_TERMINATED_CONNECTION  = 0x16,
+        CONN_INTERVAL_UNACCEPTABLE        = 0x3B,
     };
 
     /* Describes the current state of the device (more than one bit can be set) */
@@ -78,6 +76,49 @@ public:
         uint16_t slaveLatency;               /**< Slave Latency in number of connection events, see @ref BLE_GAP_CP_LIMITS.*/
         uint16_t connectionSupervisionTimeout; /**< Connection Supervision Timeout in 10 ms units, see @ref BLE_GAP_CP_LIMITS.*/
     } ConnectionParams_t;
+
+    enum Role_t {
+        PERIPHERAL  = 0x1, /**< Peripheral Role. */
+        CENTRAL     = 0x2, /**< Central Role.    */
+    };
+
+    struct AdvertisementCallbackParams_t {
+        Address_t            peerAddr;
+        int8_t               rssi;
+        bool                 isScanResponse;
+        AdvertisementType_t  type;
+        uint8_t              advertisingDataLen;
+        const uint8_t       *advertisingData;
+    };
+    typedef FunctionPointerWithContext<const AdvertisementCallbackParams_t *> AdvertisementReportCallback_t;
+
+    struct ConnectionCallbackParams_t {
+        Handle_t      handle;
+        Role_t        role;
+        AddressType_t peerAddrType;
+        Address_t     peerAddr;
+        AddressType_t ownAddrType;
+        Address_t     ownAddr;
+        const ConnectionParams_t *connectionParams;
+
+        ConnectionCallbackParams_t(Handle_t       handleIn,
+                                   Role_t         roleIn,
+                                   AddressType_t  peerAddrTypeIn,
+                                   const uint8_t *peerAddrIn,
+                                   AddressType_t  ownAddrTypeIn,
+                                   const uint8_t *ownAddrIn,
+                                   const ConnectionParams_t *connectionParamsIn) :
+            handle(handleIn),
+            role(roleIn),
+            peerAddrType(peerAddrTypeIn),
+            peerAddr(),
+            ownAddrType(ownAddrTypeIn),
+            ownAddr(),
+            connectionParams(connectionParamsIn) {
+            memcpy(peerAddr, peerAddrIn, ADDR_LEN);
+            memcpy(ownAddr, ownAddrIn, ADDR_LEN);
+        }
+    };
 
     enum SecurityMode_t {
         SECURITY_MODE_NO_ACCESS,
@@ -144,10 +185,7 @@ public:
     }
 
     typedef void (*EventCallback_t)(void);
-    typedef void (*ConnectionEventCallback_t)(Handle_t,
-                                              AddressType_t peerAddrType, const Address_t peerAddr,
-                                              AddressType_t ownAddrType,  const Address_t ownAddr,
-                                              const ConnectionParams_t *);
+    typedef void (*ConnectionEventCallback_t)(const ConnectionCallbackParams_t *params);
     typedef void (*HandleSpecificEvent_t)(Handle_t handle);
     typedef void (*DisconnectionEventCallback_t)(Handle_t, DisconnectionReason_t);
     typedef void (*RadioNotificationEventCallback_t) (bool radio_active); /* gets passed true for ACTIVE; false for INACTIVE. */
@@ -156,20 +194,12 @@ public:
     typedef void (*LinkSecuredCallback_t)(Handle_t handle, SecurityMode_t securityMode);
     typedef void (*PasskeyDisplayCallback_t)(Handle_t handle, const Passkey_t passkey);
 
-    struct AdvertisementCallbackParams_t {
-        Address_t            peerAddr;
-        int8_t               rssi;
-        bool                 isScanResponse;
-        AdvertisementType_t  type;
-        uint8_t              advertisingDataLen;
-        const uint8_t       *advertisingData;
-    };
-    typedef FunctionPointerWithContext<const AdvertisementCallbackParams_t *> AdvertisementReportCallback_t;
+    friend class BLEDevice;
 
-public:
+private:
     /* These functions must be defined in the sub-class */
-    virtual ble_error_t setAddress(AddressType_t type,   const Address_t address)                    = 0;
-    virtual ble_error_t getAddress(AddressType_t *typeP, Address_t address)                          = 0;
+    virtual ble_error_t setAddress(AddressType_t type,  const Address_t address)                  = 0;
+    virtual ble_error_t getAddress(AddressType_t *typeP, Address_t address)                        = 0;
     virtual ble_error_t setAdvertisingData(const GapAdvertisingData &, const GapAdvertisingData &) = 0;
     virtual ble_error_t startAdvertising(const GapAdvertisingParams &)                             = 0;
     virtual ble_error_t stopAdvertising(void)                                                      = 0;
@@ -177,6 +207,10 @@ public:
     virtual uint16_t    getMinAdvertisingInterval(void) const                                      = 0;
     virtual uint16_t    getMinNonConnectableAdvertisingInterval(void) const                        = 0;
     virtual uint16_t    getMaxAdvertisingInterval(void) const                                      = 0;
+    virtual ble_error_t connect(const Address_t           peerAddr,
+                                Gap::AddressType_t        peerAddrType,
+                                const ConnectionParams_t *connectionParams,
+                                const GapScanningParams  *scanParams) = 0;
     virtual ble_error_t disconnect(DisconnectionReason_t reason)                                   = 0;
     virtual ble_error_t getPreferredConnectionParams(ConnectionParams_t *params)                   = 0;
     virtual ble_error_t setPreferredConnectionParams(const ConnectionParams_t *params)             = 0;
@@ -189,9 +223,6 @@ public:
     virtual ble_error_t getDeviceName(uint8_t *deviceName, unsigned *lengthP) = 0;
     virtual ble_error_t setAppearance(uint16_t appearance)                    = 0;
     virtual ble_error_t getAppearance(uint16_t *appearanceP)                  = 0;
-
-    virtual ble_error_t setTxPower(int8_t txPower)                            = 0;
-    virtual void        getPermittedTxPowerValues(const int8_t **, size_t *)  = 0;
 
     ble_error_t startScan(const GapScanningParams &scanningParams, void (*callback)(const AdvertisementCallbackParams_t *params)) {
         ble_error_t err = BLE_ERROR_NONE;
@@ -216,7 +247,7 @@ public:
         return err;
     }
 
-public:
+protected:
     virtual ble_error_t startRadioScan(const GapScanningParams &scanningParams) = 0;
 
     /* Event callback handlers */
@@ -280,7 +311,7 @@ public:
     template<typename T>
     void addToDisconnectionCallChain(T *tptr, void (T::*mptr)(void)) {disconnectionCallChain.add(tptr, mptr);}
 
-public:
+private:
     GapState_t getState(void) const {
         return state;
     }
@@ -303,10 +334,17 @@ protected:
     }
 
 public:
-    void processConnectionEvent(Handle_t handle, AddressType_t peerAddrType, const Address_t peerAddr, AddressType_t ownAddrType, const Address_t ownAddr, const ConnectionParams_t *params) {
+    void processConnectionEvent(Handle_t                  handle,
+                                Role_t                    role,
+                                AddressType_t             peerAddrType,
+                                const Address_t           peerAddr,
+                                AddressType_t             ownAddrType,
+                                const Address_t           ownAddr,
+                                const ConnectionParams_t *connectionParams) {
         state.connected = 1;
         if (onConnection) {
-            onConnection(handle, peerAddrType, peerAddr, ownAddrType, ownAddr, params);
+            ConnectionCallbackParams_t callbackParams(handle, role, peerAddrType, peerAddr, ownAddrType, ownAddr, connectionParams);
+            onConnection(&callbackParams);
         }
     }
 
