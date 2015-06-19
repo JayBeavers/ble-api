@@ -17,40 +17,36 @@
 #ifndef __BLE_DEVICE_INSTANCE_BASE__
 #define __BLE_DEVICE_INSTANCE_BASE__
 
-#include "Gap.h"
-
-/* forward declarations */
-class GattServer;
-class GattClient;
-
 /**
  *  The interface for the transport object to be created by the target library's
- *  createBLEInstance().
+ *  createBLEDeviceInstance().
  */
-class BLEInstanceBase
+class BLEDeviceInstanceBase
 {
 public:
-    virtual ble_error_t init(void)                  = 0;
-    virtual ble_error_t shutdown(void)              = 0;
-    virtual const char *getVersion(void)            = 0;
-    virtual Gap&        getGap()                    = 0;
-    virtual const Gap&  getGap() const              = 0;
-    virtual GattServer& getGattServer()             = 0;
-    virtual const GattServer& getGattServer() const = 0;
-    virtual GattClient& getGattClient()             = 0;
-    virtual SecurityManager& getSecurityManager()   = 0;
-    virtual const SecurityManager& getSecurityManager() const = 0;
+    virtual const char *getVersion(void)           = 0;
+    virtual Gap&        getGap()                   = 0;
+    virtual GattServer& getGattServer()            = 0;
+    virtual ble_error_t init(void)                 = 0;
+    virtual ble_error_t shutdown(void)             = 0;
+    virtual ble_error_t reset(void)                = 0;
+    virtual ble_error_t initializeSecurity(bool                          enableBonding = true,
+                                           bool                          requireMITM   = true,
+                                           Gap::SecurityIOCapabilities_t iocaps        = Gap::IO_CAPS_NONE,
+                                           const Gap::Passkey_t          passkey       = NULL) = 0;
+    virtual ble_error_t setTxPower(int8_t txPower) = 0;
+    virtual void        getPermittedTxPowerValues(const int8_t **, size_t *) = 0;
     virtual void        waitForEvent(void)         = 0;
 };
 
 /**
- * BLE uses composition to hide an interface object encapsulating the
+ * BLEDevice uses composition to hide an interface object encapsulating the
  * backend transport.
  *
  * The following API is used to create the singleton interface object. An
  * implementation for this function must be provided by the device-specific
  * library, otherwise there will be a linker error.
  */
-extern BLEInstanceBase *createBLEInstance(void);
+extern BLEDeviceInstanceBase *createBLEDeviceInstance(void);
 
 #endif // ifndef __BLE_DEVICE_INSTANCE_BASE__

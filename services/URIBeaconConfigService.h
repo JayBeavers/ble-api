@@ -17,21 +17,21 @@
 #ifndef SERVICES_URIBEACONCONFIGSERVICE_H_
 #define SERVICES_URIBEACONCONFIGSERVICE_H_
 
-#include "BLE.h"
+#include "BLEDevice.h"
 #include "mbed.h"
 
-extern const uint8_t UUID_URI_BEACON_SERVICE[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_LOCK_STATE_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_LOCK_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_UNLOCK_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_URI_DATA_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_FLAGS_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_ADV_POWER_LEVELS_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_TX_POWER_MODE_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_BEACON_PERIOD_CHAR[UUID::LENGTH_OF_LONG_UUID];
-extern const uint8_t UUID_RESET_CHAR[UUID::LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_URI_BEACON_SERVICE[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_LOCK_STATE_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_LOCK_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_UNLOCK_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_URI_DATA_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_FLAGS_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_ADV_POWER_LEVELS_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_TX_POWER_MODE_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_BEACON_PERIOD_CHAR[LENGTH_OF_LONG_UUID];
+extern const uint8_t UUID_RESET_CHAR[LENGTH_OF_LONG_UUID];
 
-extern const uint8_t BEACON_UUID[sizeof(UUID::ShortUUIDBytes_t)];
+extern const uint8_t BEACON_UUID[sizeof(ShortUUIDBytes_t)];
 
 /**
 * @class URIBeaconConfigService
@@ -71,7 +71,7 @@ class URIBeaconConfigService {
 
     /**
      * @param[ref]    ble
-     *                    BLE object for the underlying controller.
+     *                    BLEDevice object for the underlying controller.
      * @param[in/out] paramsIn
      *                    Reference to application-visible beacon state, loaded
      *                    from persistent storage at startup.
@@ -85,7 +85,7 @@ class URIBeaconConfigService {
      * @param[in]     defaultAdvPowerLevelsIn
      *                    Default power-levels array; applies only if the resetToDefaultsFlag is true.
      */
-    URIBeaconConfigService(BLE          &bleIn,
+    URIBeaconConfigService(BLEDevice     &bleIn,
                            Params_t      &paramsIn,
                            bool          resetToDefaultsFlag,
                            const char   *defaultURIDataIn,
@@ -232,8 +232,8 @@ class URIBeaconConfigService {
      * characteristics of this service. Attempts to do so are also applied to
      * the internal state of this service object.
      */
-    void onDataWrittenCallback(const GattWriteCallbackParams *writeParams) {
-        uint16_t handle = writeParams->handle;
+    void onDataWrittenCallback(const GattCharacteristicWriteCBParams *writeParams) {
+        uint16_t handle = writeParams->charHandle;
 
         if (handle == lockChar.getValueHandle()) {
             // Validated earlier
@@ -305,8 +305,8 @@ class URIBeaconConfigService {
                                       reinterpret_cast<uint8_t *>(params.advPowerLevels), sizeof(PowerLevels_t));
     }
 
-private:
-    void lockAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
+  private:
+    void lockAuthorizationCallback(GattCharacteristicWriteAuthCBParams *authParams) {
         if (lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->len != sizeof(Lock_t)) {
@@ -319,7 +319,7 @@ private:
     }
 
 
-    void unlockAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
+    void unlockAuthorizationCallback(GattCharacteristicWriteAuthCBParams *authParams) {
         if (!lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_SUCCESS;
         } else if (authParams->len != sizeof(Lock_t)) {
@@ -333,7 +333,7 @@ private:
         }
     }
 
-    void uriDataWriteAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
+    void uriDataWriteAuthorizationCallback(GattCharacteristicWriteAuthCBParams *authParams) {
         if (lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->offset != 0) {
@@ -343,7 +343,7 @@ private:
         }
     }
 
-    void powerModeAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
+    void powerModeAuthorizationCallback(GattCharacteristicWriteAuthCBParams *authParams) {
         if (lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->len != sizeof(uint8_t)) {
@@ -358,7 +358,7 @@ private:
     }
 
     template <typename T>
-    void basicAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
+    void basicAuthorizationCallback(GattCharacteristicWriteAuthCBParams *authParams) {
         if (lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->len != sizeof(T)) {
@@ -370,8 +370,7 @@ private:
         }
     }
 
-protected:
-    BLE           &ble;
+    BLEDevice     &ble;
     Params_t      &params;
 
     size_t        defaultUriDataLength;   // Default value that is restored on reset
@@ -392,7 +391,7 @@ protected:
     ReadWriteGattCharacteristic<uint16_t>      beaconPeriodChar;
     WriteOnlyGattCharacteristic<uint8_t>       resetChar;
 
-public:
+  public:
     /*
      *  Encode a human-readable URI into the binary format defined by URIBeacon spec (https://github.com/google/uribeacon/tree/master/specification).
      */
