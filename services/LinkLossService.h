@@ -80,7 +80,7 @@ private:
      * @param[in] params
      *     Information about the characterisitc being updated.
      */
-    virtual void onDataWritten(const GattWriteCallbackParams *params) {
+    virtual void onDataWritten(const GattCharacteristicWriteCBParams *params) {
         if (params->charHandle == alertLevelChar.getValueHandle()) {
             alertLevel = *reinterpret_cast<const AlertLevel_t *>(params->data);
         }
@@ -92,7 +92,7 @@ private:
         }
     }
 
-private:
+protected:
     BLEDevice    &ble;
     AlertLevel_t  alertLevel;
     callback_t    callback;

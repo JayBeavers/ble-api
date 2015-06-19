@@ -54,11 +54,11 @@ public:
     */
     DFUService(BLEDevice &_ble, ResetPrepare_t _handoverCallback = NULL) :
         ble(_ble),
-        controlBytes(),
-        packetBytes(),
         controlPoint(DFUServiceControlCharacteristicUUID, controlBytes, GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_NOTIFY),
         packet(DFUServicePacketCharacteristicUUID, packetBytes, SIZEOF_PACKET_BYTES, SIZEOF_PACKET_BYTES,
-               GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE) {
+               GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE_WITHOUT_RESPONSE),
+        controlBytes(),
+        packetBytes() {
         static bool serviceAdded = false; /* We should only ever need to add the DFU service once. */
         if (serviceAdded) {
             return;
@@ -94,8 +94,8 @@ public:
      * @param[in] params
      *     Information about the characterisitc being updated.
      */
-    virtual void onDataWritten(const GattWriteCallbackParams *params) {
-        if (params->handle == controlPoint.getValueHandle()) {
+    virtual void onDataWritten(const GattCharacteristicWriteCBParams *params) {
+        if (params->charHandle == controlPoint.getValueHandle()) {
             /* At present, writing anything will do the trick--this needs to be improved. */
             if (handoverCallback) {
                 handoverCallback();
@@ -105,16 +105,12 @@ public:
         }
     }
 
-private:
+protected:
     static const unsigned SIZEOF_CONTROL_BYTES = 2;
     static const unsigned SIZEOF_PACKET_BYTES  = 20;
 
-    static ResetPrepare_t handoverCallback;  /**< application specific handover callback. */
-
-private:
+protected:
     BLEDevice          &ble;
-    uint8_t             controlBytes[SIZEOF_CONTROL_BYTES];
-    uint8_t             packetBytes[SIZEOF_PACKET_BYTES];
 
     /**< Writing to the control characteristic triggers the handover to dfu-
       *  bootloader. At present, writing anything will do the trick--this needs
@@ -127,6 +123,11 @@ private:
       *  FOTA clients might get confused as service definitions change after
       *  handing control over to the bootloader. */
     GattCharacteristic  packet;
+
+    uint8_t             controlBytes[SIZEOF_CONTROL_BYTES];
+    uint8_t             packetBytes[SIZEOF_PACKET_BYTES];
+
+    static ResetPrepare_t handoverCallback;  /**< application specific handover callback. */
 };
 
 #endif /* #ifndef __BLE_DFU_SERVICE_H__*/
