@@ -20,8 +20,8 @@
 #include "mbed.h"
 #include "Stream.h"
 
-#include "UUID.h"
-#include "BLEDevice.h"
+#include "ble/UUID.h"
+#include "ble/BLE.h"
 
 extern const uint8_t  UARTServiceBaseUUID[UUID::LENGTH_OF_LONG_UUID];
 extern const uint16_t UARTServiceShortUUID;
@@ -48,9 +48,9 @@ public:
 
     /**
     * @param[ref] ble
-    *                 BLEDevice object for the underlying controller.
+    *               BLE object for the underlying controller.
     */
-    UARTService(BLEDevice &_ble) :
+    UARTService(BLE &_ble) :
         ble(_ble),
         receiveBuffer(),
         sendBuffer(),
@@ -167,8 +167,8 @@ private:
      * function from the global onDataWritten() callback handler; or if that's
      * not used, this method can be used as a callback directly.
      */
-    void onDataWritten(const GattCharacteristicWriteCBParams *params) {
-        if (params->charHandle == getTXCharacteristicHandle()) {
+    void onDataWritten(const GattWriteCallbackParams *params) {
+        if (params->handle == getTXCharacteristicHandle()) {
             uint16_t bytesRead = params->len;
             if (bytesRead <= BLE_UART_SERVICE_MAX_DATA_LEN) {
                 numBytesReceived   = bytesRead;
@@ -179,7 +179,7 @@ private:
     }
 
 private:
-    BLEDevice          &ble;
+    BLE                &ble;
 
     uint8_t             receiveBuffer[BLE_UART_SERVICE_MAX_DATA_LEN]; /**< The local buffer into which we receive
                                                                        *   inbound data before forwarding it to the
