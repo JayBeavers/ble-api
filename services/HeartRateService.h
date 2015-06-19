@@ -114,7 +114,7 @@ public:
      * @param[in] params
      *     Information about the characterisitc being updated.
      */
-    virtual void onDataWritten(const GattCharacteristicWriteCBParams *params) {
+    virtual void onDataWritten(const GattWriteCallbackParams *params) {
         if (params->charHandle == controlPoint.getValueAttribute().getHandle()) {
             /* Do something here if the new value is 1; else you can override this method by
              * extending this class.
@@ -125,16 +125,23 @@ public:
         }
     }
 
-protected:
+private:
     void setupService(void) {
+        static bool serviceAdded = false; /* We should only ever need to add the heart rate service once. */
+        if (serviceAdded) {
+            return;
+        }
+
         GattCharacteristic *charTable[] = {&hrmRate, &hrmLocation, &controlPoint};
         GattService         hrmService(GattService::UUID_HEART_RATE_SERVICE, charTable, sizeof(charTable) / sizeof(GattCharacteristic *));
 
         ble.addService(hrmService);
+        serviceAdded = true;
+
         ble.onDataWritten(this, &HeartRateService::onDataWritten);
     }
 
-protected:
+private:
     /* Private internal representation for the bytes used to work with the vaulue of the heart-rate characteristic. */
     struct HeartRateValueBytes {
         static const unsigned MAX_VALUE_BYTES  = 3; /* FLAGS + up to two bytes for heart-rate */
@@ -174,13 +181,13 @@ protected:
             return 1 + ((valueBytes[FLAGS_BYTE_INDEX] & VALUE_FORMAT_FLAG) ? sizeof(uint16_t) : sizeof(uint8_t));
         }
 
-    private:
+private:
         /* First byte = 8-bit values, no extra info, Second byte = uint8_t HRM value */
         /* See --> https://developer.bluetooth.org/gatt/characteristics/Pages/CharacteristicViewer.aspx?u=org.bluetooth.characteristic.heart_rate_measurement.xml */
         uint8_t valueBytes[MAX_VALUE_BYTES];
     };
 
-protected:
+private:
     BLEDevice           &ble;
 
     HeartRateValueBytes  valueBytes;

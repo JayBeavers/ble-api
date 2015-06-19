@@ -114,7 +114,7 @@ public:
         serviceAdded = true;
     }
 
-protected:
+private:
     BLEDevice          &ble;
     GattCharacteristic  manufacturersNameStringCharacteristic;
     GattCharacteristic  modelNumberStringCharacteristic;
