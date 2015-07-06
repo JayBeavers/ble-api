@@ -73,7 +73,7 @@ public:
         alertLevel = newLevel;
     }
 
-protected:
+private:
     /**
      * This callback allows receiving updates to the AlertLevel Characteristic.
      *
@@ -81,7 +81,7 @@ protected:
      *     Information about the characterisitc being updated.
      */
     virtual void onDataWritten(const GattWriteCallbackParams *params) {
-        if (params->handle == alertLevelChar.getValueHandle()) {
+        if (params->charHandle == alertLevelChar.getValueHandle()) {
             alertLevel = *reinterpret_cast<const AlertLevel_t *>(params->data);
         }
     }
