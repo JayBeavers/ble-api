@@ -550,8 +550,8 @@ public:
      * small.
      *
      * @param  app
-     *         The max transmit power to be used by the controller (in dBm).
-     *         This is only a hint.
+     *         The max transmit power to be used by the controller. This is
+     *         only a hint.
      */
     ble_error_t accumulateAdvertisingPayloadTxPower(int8_t power) {
         ble_error_t rc;
@@ -579,6 +579,27 @@ public:
 
         ble_error_t rc;
         if ((rc = _advPayload.addData(type, data, len)) != BLE_ERROR_NONE) {
+            return rc;
+        }
+
+        return setAdvertisingData();
+    }
+
+    /**
+     * Update the advertising payload filed which has the same adv type as the input
+     * parameter. Total length of the new data must be the same as the old one.
+     *
+     * @param  type The type which describes the variable length data.
+     * @param  data data bytes.
+     * @param  len  length of data.
+     */
+    ble_error_t updateAdvertisingPayload(GapAdvertisingData::DataType type, const uint8_t *data, uint8_t len) {
+        if (type == GapAdvertisingData::COMPLETE_LOCAL_NAME) {
+            setDeviceName(data);
+        }
+
+        ble_error_t rc;
+        if ((rc = _advPayload.updateData(type, data, len)) != BLE_ERROR_NONE) {
             return rc;
         }
 
