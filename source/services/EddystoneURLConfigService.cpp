@@ -22,7 +22,9 @@
 }
 
 const uint8_t UUID_EDDYSTONE_URL_SERVICE[UUID::LENGTH_OF_LONG_UUID]    = UUID_URI_BEACON(0x20, 0x80);
-const uint8_t UUID_LOCK_STATE_CHAR[UUID::LENGTH_OF_LONG_UUID]       = UUID_URI_BEACON(0x20, 0x81);
+// The block below is commented out because it is defined in URIBeaconConfigService.cpp. 
+// The code can be reinstated when the URIBeaconConfigService name is deprecated.
+/* const uint8_t UUID_LOCK_STATE_CHAR[UUID::LENGTH_OF_LONG_UUID]       = UUID_URI_BEACON(0x20, 0x81);
 const uint8_t UUID_LOCK_CHAR[UUID::LENGTH_OF_LONG_UUID]             = UUID_URI_BEACON(0x20, 0x82);
 const uint8_t UUID_UNLOCK_CHAR[UUID::LENGTH_OF_LONG_UUID]           = UUID_URI_BEACON(0x20, 0x83);
 const uint8_t UUID_URI_DATA_CHAR[UUID::LENGTH_OF_LONG_UUID]         = UUID_URI_BEACON(0x20, 0x84);
@@ -33,3 +35,4 @@ const uint8_t UUID_BEACON_PERIOD_CHAR[UUID::LENGTH_OF_LONG_UUID]    = UUID_URI_B
 const uint8_t UUID_RESET_CHAR[UUID::LENGTH_OF_LONG_UUID]            = UUID_URI_BEACON(0x20, 0x89);
 
 const uint8_t BEACON_UUID[sizeof(UUID::ShortUUIDBytes_t)] = {0xAA, 0xFE};
+*/
