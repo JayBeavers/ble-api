@@ -49,7 +49,7 @@ class EddystoneService
 {
 public:
     /**
-     * @brief Transmission Power Modes for UriBeacon
+     * @brief Transmission Power Modes for Eddystone-URL Beacon
      */
 
     static const int ADVERTISING_INTERVAL_MSEC = 1000;  // Advertising interval for config service.
@@ -466,7 +466,7 @@ private:
 
 public:
     /*
-     *  Encode a human-readable URI into the binary format defined by URIBeacon spec (https://github.com/google/uribeacon/tree/master/specification).
+     *  Encode a human-readable URI into the binary format defined by Eddystone-URL spec (https://github.com/google/eddystone/tree/master/eddystone-url).
      */
     static void encodeURL(const char *uriDataIn, UriData_t uriDataOut, size_t &sizeofURIDataOut) {
         const char *prefixes[] = {

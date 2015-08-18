@@ -7,6 +7,7 @@ Currently supported  services include:
 * Battery 
 * Device Firmware Update (DFU)
 * Device Information 
+* EddystoneURLConfig
 * Health Thermometer
 * Heart Rate
 * UART
