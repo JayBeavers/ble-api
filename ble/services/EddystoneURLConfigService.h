@@ -31,7 +31,7 @@ extern const uint8_t UUID_TX_POWER_MODE_CHAR[UUID::LENGTH_OF_LONG_UUID];
 extern const uint8_t UUID_BEACON_PERIOD_CHAR[UUID::LENGTH_OF_LONG_UUID];
 extern const uint8_t UUID_RESET_CHAR[UUID::LENGTH_OF_LONG_UUID];
 
-extern const uint8_t BEACON_UUID[sizeof(UUID::ShortUUIDBytes_t)];
+extern const uint8_t EDDYSTONE_BEACON_UUID[sizeof(UUID::ShortUUIDBytes_t)];
 
 /**
 * @class EddystoneURLConfigService
@@ -60,6 +60,7 @@ class EddystoneURLConfigService {
     typedef uint8_t  UriData_t[URI_DATA_MAX];
 
     struct Params_t {
+        uint8_t       lockedState;
         Lock_t        lock;
         uint8_t       uriDataLength;
         UriData_t     uriData;
@@ -97,7 +98,7 @@ class EddystoneURLConfigService {
         defaultAdvPowerLevels(defaultAdvPowerLevelsIn),
         initSucceeded(false),
         resetFlag(),
-        lockedStateChar(UUID_LOCK_STATE_CHAR, &lockedState),
+        lockedStateChar(UUID_LOCK_STATE_CHAR, &params.lockedState),
         lockChar(UUID_LOCK_CHAR, &params.lock),
         uriDataChar(UUID_URI_DATA_CHAR, params.uriData, 0, URI_DATA_MAX,
                     GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_READ | GattCharacteristic::BLE_GATT_CHAR_PROPERTIES_WRITE),
@@ -121,8 +122,6 @@ class EddystoneURLConfigService {
         } else {
             updateCharacteristicValues();
         }
-
-        lockedState = isLocked();
 
         lockChar.setWriteAuthorizationCallback(this, &EddystoneURLConfigService::lockAuthorizationCallback);
         unlockChar.setWriteAuthorizationCallback(this, &EddystoneURLConfigService::unlockAuthorizationCallback);
@@ -204,12 +203,12 @@ class EddystoneURLConfigService {
         ble.gap().setAdvertisingType(GapAdvertisingParams::ADV_NON_CONNECTABLE_UNDIRECTED);
         ble.gap().setAdvertisingInterval(beaconPeriod);
         ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::BREDR_NOT_SUPPORTED | GapAdvertisingData::LE_GENERAL_DISCOVERABLE);
-        ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, BEACON_UUID, sizeof(BEACON_UUID));
+        ble.gap().accumulateAdvertisingPayload(GapAdvertisingData::COMPLETE_LIST_16BIT_SERVICE_IDS, EDDYSTONE_BEACON_UUID, sizeof(EDDYSTONE_BEACON_UUID));
 
         uint8_t serviceData[SERVICE_DATA_MAX];
         unsigned serviceDataLen = 0;
-        serviceData[serviceDataLen++] = BEACON_UUID[0];
-        serviceData[serviceDataLen++] = BEACON_UUID[1];
+        serviceData[serviceDataLen++] = EDDYSTONE_BEACON_UUID[0];
+        serviceData[serviceDataLen++] = EDDYSTONE_BEACON_UUID[1];
         serviceData[serviceDataLen++] = flags;
         serviceData[serviceDataLen++] = advPowerLevels[txPowerMode];
         for (unsigned j = 0; j < uriDataLength; j++) {
@@ -219,13 +218,6 @@ class EddystoneURLConfigService {
     }
 
   private:
-    // True if the lock bits are non-zero
-    bool isLocked() {
-        Lock_t testLock;
-        memset(testLock, 0, sizeof(Lock_t));
-        return memcmp(params.lock, testLock, sizeof(Lock_t));
-    }
-
     /*
      * This callback is invoked when a GATT client attempts to modify any of the
      * characteristics of this service. Attempts to do so are also applied to
@@ -238,11 +230,11 @@ class EddystoneURLConfigService {
             // Validated earlier
             memcpy(params.lock, writeParams->data, sizeof(Lock_t));
             // use isLocked() in case bits are being set to all 0's
-            lockedState = isLocked();
+            params.lockedState = true;
         } else if (handle == unlockChar.getValueHandle()) {
             // Validated earlier
             memset(params.lock, 0, sizeof(Lock_t));
-            lockedState = false;
+            params.lockedState = false;
         } else if (handle == uriDataChar.getValueHandle()) {
             params.uriDataLength = writeParams->len;
             memcpy(params.uriData, writeParams->data, params.uriDataLength);
@@ -278,7 +270,7 @@ class EddystoneURLConfigService {
      * Reset the default values.
      */
     void resetToDefaults(void) {
-        lockedState             = false;
+        params.lockedState       = false;
         memset(params.lock, 0, sizeof(Lock_t));
         memcpy(params.uriData, defaultUriData, URI_DATA_MAX);
         params.uriDataLength    = defaultUriDataLength;
@@ -294,7 +286,7 @@ class EddystoneURLConfigService {
      * change to the internal state of the service object.
      */
     void updateCharacteristicValues(void) {
-        ble.gattServer().write(lockedStateChar.getValueHandle(), &lockedState, 1);
+        ble.gattServer().write(lockedStateChar.getValueHandle(), &params.lockedState, 1);
         ble.gattServer().write(uriDataChar.getValueHandle(), params.uriData, params.uriDataLength);
         ble.gattServer().write(flagsChar.getValueHandle(), &params.flags, 1);
         ble.gattServer().write(beaconPeriodChar.getValueHandle(),
@@ -306,7 +298,7 @@ class EddystoneURLConfigService {
 
 protected:
     void lockAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
-        if (lockedState) {
+        if (params.lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->len != sizeof(Lock_t)) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INVALID_ATT_VAL_LENGTH;
@@ -319,7 +311,7 @@ protected:
 
 
     void unlockAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
-        if (!lockedState) {
+        if ((!params.lockedState) && (authParams->len == sizeof(Lock_t))) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_SUCCESS;
         } else if (authParams->len != sizeof(Lock_t)) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INVALID_ATT_VAL_LENGTH;
@@ -333,7 +325,7 @@ protected:
     }
 
     void uriDataWriteAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
-        if (lockedState) {
+        if (params.lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->offset != 0) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INVALID_OFFSET;
@@ -343,7 +335,7 @@ protected:
     }
 
     void powerModeAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
-        if (lockedState) {
+        if (params.lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->len != sizeof(uint8_t)) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INVALID_ATT_VAL_LENGTH;
@@ -358,7 +350,7 @@ protected:
 
     template <typename T>
     void basicAuthorizationCallback(GattWriteAuthCallbackParams *authParams) {
-        if (lockedState) {
+        if (params.lockedState) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INSUF_AUTHORIZATION;
         } else if (authParams->len != sizeof(T)) {
             authParams->authorizationReply = AUTH_CALLBACK_REPLY_ATTERR_INVALID_ATT_VAL_LENGTH;
@@ -377,7 +369,6 @@ protected:
     UriData_t     defaultUriData;         // Default value that is restored on reset
     PowerLevels_t &defaultAdvPowerLevels; // Default value that is restored on reset
 
-    uint8_t       lockedState;
     bool          initSucceeded;
     uint8_t       resetFlag;
 
